@@ -177,7 +177,7 @@ def main(args):
     print(args)
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     # Load Amazon-WILDS dataset
-    dataset = get_dataset("amazon", download=True)
+    dataset = get_dataset("amazon", root_dir="./data", download=True)
     # Define transforms
     train_transform = get_bert_transform()
     eval_transform = train_transform

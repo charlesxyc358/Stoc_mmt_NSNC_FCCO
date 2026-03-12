@@ -15,6 +15,7 @@ from tqdm import tqdm
 import argparse
 import random
 from collections import defaultdict
+import math
 
 from loss_function import * #SONEX, SONX, OOA
 
@@ -146,7 +147,7 @@ def main(args):
     print(args)
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     # Load Camelyon17-WILDS dataset
-    dataset = get_dataset("camelyon17", download=True)
+    dataset = get_dataset("camelyon17", root_dir="./data", download=True)
     # Define transforms
     image_size = 96
     train_transform = transforms.Compose([
@@ -206,7 +207,7 @@ def main(args):
     # scheduler = lr_scheduler.ExponentialLR(optimizer, gamma=0.75)
 
     num_epochs = args.epoch
-    k = round(args.alpha*n_groups_val)
+    k = math.ceil(args.alpha*n_groups_val)
     log_idval_loss, log_idval_acc = [], []  
     print("Training Started")
     best_val_acc, best_epoch = 0,0
