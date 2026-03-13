@@ -22,12 +22,10 @@ cd GroupDRO
 Download from [Wilds Datasets](https://worksheets.codalab.org/worksheets/0xb44731cc8e8a4265a20146c3887b6b90), then put the downloaded tar.gz files under ./data folder and extract to the corresponding folder:
 ```
 mkdir data
-cd data
-mkdir camelyon17_v1.0
+mkdir data/camelyon17_v1.0
 tar -xzf ./data/camelyon17_v1.0.tar.gz -C ./data/camelyon17_v1.0
-mkdir amazon_v2.1
+mkdir data/amazon_v2.1
 tar -xzf ./data/amazon_v2.1.tar.gz -C ./data/amazon_v2.1
-cd ..
 ```
 #### Train on Camelyon17 dataset with SONEX
 ```
