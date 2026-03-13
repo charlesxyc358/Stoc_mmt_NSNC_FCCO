@@ -95,7 +95,7 @@ def run(args, logger):
     if args.loss in ['con_ex', 'hinge_vr']: #
         optimizer = SGD(model.parameters(), lr=args.lr, weight_decay=args.weight_decay)
     elif args.loss == 'alexr2':
-        optimizer = MEAdamW(model.parameters(), lr=args.outlr, lr_prox = args.lr, eps=1e-2, \
+        optimizer = MEAdamW(model.parameters(), lr=args.outlr, lr_prox = args.lr, \
                          weight_decay=args.weight_decay, betas= (1-args.mmt, 0.999), mor_coef=args.nu, restart=args.restart) #
     else:
         optimizer = Adam(model.parameters(), lr=args.lr, weight_decay=args.weight_decay)
