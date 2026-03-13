@@ -15,10 +15,10 @@ from sklearn.model_selection import train_test_split
 from libauc.sampler import DualSampler
 import matplotlib.pyplot as plt
 
-from net import TwoLayerNN, densenet121
-from load_data import load_db_by_name, CheXpert
+from net import TwoLayerNN
+from load_data import load_db_by_name
 from loss import  AUC_Loss, AUC_ROC_Penalty, AUC_ROC_Penalty_Hinge_VR, AUC_ROC_Penalty_SH, ConEx, AUC_ROC_Penalty_smHinge_VR
-from optimizer import *
+from optimizer import MEAdamW
 
 def set_all_seeds(SEED):
     # REPRODUCIBILITY
@@ -41,64 +41,36 @@ def run(args, logger):
     # log_dir = './Released_results/'
 
     ## data
-    if args.dataset == 'chexpert':
-        train_dataset = CheXpert(csv_path=args.img_root +"train.csv", image_root_path=args.img_root, use_frontal=True, 
-                        train_cols=[ 'Edema', ], image_size=224, mode='train', set_type='train', verbose=True)
-        trainVal_dataset = CheXpert(csv_path=args.img_root +"train.csv", image_root_path=args.img_root, use_frontal=True, 
-                        train_cols=[ 'Edema', ], image_size=224, mode='test', set_type='train', verbose=True)
-        val_dataset = CheXpert(csv_path=args.img_root +"train.csv", image_root_path=args.img_root, use_frontal=True, 
-                        train_cols=[ 'Edema', ], image_size=224, mode='test', set_type='val', verbose=True)
-        test_dataset = CheXpert(csv_path=args.img_root +"train.csv", image_root_path=args.img_root, use_frontal=True, 
-                        train_cols=['Edema', ], image_size=224, mode='test', set_type='test', verbose=True)
+    train_data, test_data = load_db_by_name(args.dataset)
+    X_train, X_val, y_train, y_val, z_train, z_val = train_test_split(
+                train_data[0], train_data[1], train_data[2], test_size=args.val_size,
+                random_state=42)
+    train_dataset = TensorDataset(torch.tensor(X_train, dtype=torch.float32), 
+                                torch.tensor(y_train, dtype=torch.long), 
+                                torch.tensor(z_train, dtype=torch.long))
+    val_dataset = TensorDataset(torch.tensor(X_val, dtype=torch.float32), 
+                                torch.tensor(y_val), 
+                                torch.tensor(z_val))
+    test_dataset = TensorDataset(torch.tensor(test_data[0], dtype=torch.float32), 
+                                torch.tensor(test_data[1]), 
+                                torch.tensor(test_data[2]))
+    
+    # dataloaders
+    sampler = DualSampler(train_dataset, args.batch_size, labels=y_train, sampling_rate=args.sampling_rate)
+    
+    train_loader = torch.utils.data.DataLoader(train_dataset, batch_size=args.batch_size, sampler=sampler, num_workers=4)
+    trainVal_loader = torch.utils.data.DataLoader(train_dataset, batch_size=args.batch_size, shuffle=False, num_workers=4)
+    val_loader = torch.utils.data.DataLoader(val_dataset, batch_size=args.batch_size, shuffle=False, num_workers=4)
+    test_loader = torch.utils.data.DataLoader(test_dataset, batch_size=args.batch_size, shuffle=False, num_workers=4)
 
-        # dataloaders
-        sampler = DualSampler(train_dataset, args.batch_size, labels=train_dataset.targets, sampling_rate=args.sampling_rate)
-        
-        train_loader = torch.utils.data.DataLoader(train_dataset, batch_size=args.batch_size, sampler=sampler, num_workers=8)
-        trainVal_loader = torch.utils.data.DataLoader(trainVal_dataset, batch_size=args.batch_size, shuffle=False, num_workers=8)
-        val_loader = torch.utils.data.DataLoader(val_dataset, batch_size=args.batch_size, shuffle=False, num_workers=8)
-        test_loader = torch.utils.data.DataLoader(test_dataset, batch_size=args.batch_size, shuffle=False, num_workers=8)
+    ### model initialization
+    input_size = X_train.shape[1]
+    model = TwoLayerNN(input_size=input_size, hidden_size=input_size, output_size=1)
+    model_b = copy.deepcopy(model)
+    
+    model = model.cuda()
+    model_b = model_b.cuda()
 
-        ### model initialization
-        model = densenet121(num_classes=1, pretrained=True)
-        model_b = copy.deepcopy(model)
-        
-        model = model.cuda()
-        model_b = model_b.cuda()
-    else:
-        train_data, test_data = load_db_by_name(args.dataset)
-        X_train, X_val, y_train, y_val, z_train, z_val = train_test_split(
-                    train_data[0], train_data[1], train_data[2], test_size=args.val_size,
-                    random_state=42)
-        train_dataset = TensorDataset(torch.tensor(X_train, dtype=torch.float32), 
-                                    torch.tensor(y_train, dtype=torch.long), 
-                                    torch.tensor(z_train, dtype=torch.long))
-        val_dataset = TensorDataset(torch.tensor(X_val, dtype=torch.float32), 
-                                    torch.tensor(y_val), 
-                                    torch.tensor(z_val))
-        test_dataset = TensorDataset(torch.tensor(test_data[0], dtype=torch.float32), 
-                                    torch.tensor(test_data[1]), 
-                                    torch.tensor(test_data[2]))
-        
-        # dataloaders
-        sampler = DualSampler(train_dataset, args.batch_size, labels=y_train, sampling_rate=args.sampling_rate)
-        
-        train_loader = torch.utils.data.DataLoader(train_dataset, batch_size=args.batch_size, sampler=sampler, num_workers=4)
-        trainVal_loader = torch.utils.data.DataLoader(train_dataset, batch_size=args.batch_size, shuffle=False, num_workers=4)
-        val_loader = torch.utils.data.DataLoader(val_dataset, batch_size=args.batch_size, shuffle=False, num_workers=4)
-        test_loader = torch.utils.data.DataLoader(test_dataset, batch_size=args.batch_size, shuffle=False, num_workers=4)
-
-        ### model initialization
-        input_size = X_train.shape[1]
-        model = TwoLayerNN(input_size=input_size, hidden_size=input_size, output_size=1)
-        model_b = copy.deepcopy(model)
-        
-        model = model.cuda()
-        model_b = model_b.cuda()
-
-    # loss_fn = torch.nn.BCELoss()
-    # loss_fn = PairwiseAUCLoss1(surr_loss='logistic', hparam=10.0)
-    # loss_fn=AUC_Loss(scaling=5.)
     if args.loss in ['hinge_vr']:
         loss_fn = AUC_ROC_Penalty_Hinge_VR(beta=args.beta, gamma=args.gamma, gamma_p=args.gamma_p,
                                 scaling=args.scaling, kappa=args.kappa, 
@@ -121,12 +93,12 @@ def run(args, logger):
                                 ths=torch.arange(args.th_start,args.th_end,args.th_step))
         
     if args.loss in ['con_ex', 'hinge_vr']: #
-        optimizer =SGD(model.parameters(), lr=args.lr, weight_decay=args.weight_decay)
+        optimizer = SGD(model.parameters(), lr=args.lr, weight_decay=args.weight_decay)
     elif args.loss == 'alexr2':
         optimizer = MEAdamW(model.parameters(), lr=args.outlr, lr_prox = args.lr, eps=1e-2, \
                          weight_decay=args.weight_decay, betas= (1-args.mmt, 0.999), mor_coef=args.nu, restart=args.restart) #
     else:
-        optimizer =Adam(model.parameters(), lr=args.lr, weight_decay=args.weight_decay)
+        optimizer = Adam(model.parameters(), lr=args.lr, weight_decay=args.weight_decay)
 
 
     #### train
@@ -204,14 +176,6 @@ def run(args, logger):
             train_loss.append(loss.item())
 
             
-            try: #if epoch != 0 or i > 1:  # skip the first epoch for OSSO
-                curr_ada_lr_lb, curr_ada_lr_ub = comp_ada_lr_bound(optimizer)
-                ada_lr_lb = min(ada_lr_lb, curr_ada_lr_lb)
-                ada_lr_ub = max(ada_lr_ub, curr_ada_lr_ub)
-                print(f"Epoch {epoch}: Adaptive learning Bound: {ada_lr_lb}, {ada_lr_ub}")
-                print(f"Epoch {epoch}: Adaptive learning Bound(curr iter): {curr_ada_lr_lb}, {curr_ada_lr_ub}")
-            except Exception as e:
-                print(f"Error in computing adaptive learning bound: {e}")
         train_loss = np.mean(train_loss)
         
         ### evaluation
@@ -311,8 +275,6 @@ def eval_constraint(y_true, y_pred, z_attr, epoch_stats, set_type, args): #ths=n
     f_ns = y_pred[~pos_mask].squeeze()
     approx_auc = approx_indicator((f_ps - f_ns), c = args.scaling)
     epoch_stats[f'{set_type}_approx_auc'] = np.round(-approx_auc.mean(), 4)
-
-
 
 
 def eval_fn(model, test_loader,  epoch_stats=None, set_type = 'train', plot=False, args=None ):

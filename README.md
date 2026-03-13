@@ -1,5 +1,6 @@
 <h1> Stochastic Momentum Methods for Non-smooth Non-Convex Finite-Sum Coupled Compositional Optimization</h1>
-This repository provide codes for the paper [Stochastic Momentum Methods for Non-smooth Non-Convex Finite-Sum Coupled Compositional Optimization](https://arxiv.org/abs/2506.02504).
+
+This repository provide codes for the paper [Stochastic Momentum Methods for Non-smooth Non-Convex Finite-Sum Coupled Compositional Optimization](https://arxiv.org/abs/2506.02504) .
 
 ## Installation
 
@@ -20,10 +21,13 @@ cd GroupDRO
 #### Download and Prepare the (labeled)Camelyon17_v1.0 and Amazon_v2.1 datasets
 Download from [Wilds Datasets](https://worksheets.codalab.org/worksheets/0xb44731cc8e8a4265a20146c3887b6b90), then put the downloaded tar.gz files under ./data folder and extract to the corresponding folder:
 ```
+mkdir data
+cd data
 mkdir camelyon17_v1.0
 tar -xzf ./data/camelyon17_v1.0.tar.gz -C ./data/camelyon17_v1.0
 mkdir amazon_v2.1
 tar -xzf ./data/amazon_v2.1.tar.gz -C ./data/amazon_v2.1
+cd ..
 ```
 #### Train on Camelyon17 dataset with SONEX
 ```
@@ -42,16 +46,16 @@ python main_amz.py --alg SONEX --gpu 0 --lr 2e-5 --beta 0.1 --gamma 0.2 --lamda 
 cd AUCMax
 ```
 #### Download and Prepare the adult and compas datasets 
-First run the following command and download the files
+Run the following command to download the datasets.
 ```
-wget https://archive.ics.uci.edu/ml/machine-learning-databases/adult/adult.data
-wget https://archive.ics.uci.edu/ml/machine-learning-databases/adult/adult.test
-wget https://archive.ics.uci.edu/ml/machine-learning-databases/adult/adult.names
-wget https://raw.githubusercontent.com/propublica/compas-analysis/master/compas-scores-two-years.csv
-wget https://raw.githubusercontent.com/propublica/compas-analysis/master/compas-scores.csv
-wget https://raw.githubusercontent.com/propublica/compas-analysis/master/compas-scores-two-years-violent.csv
+mkdir data
+mkdir data/adult
+mkdir data/compas
+wget https://archive.ics.uci.edu/ml/machine-learning-databases/adult/adult.data -O data/adult/adult.data
+wget https://archive.ics.uci.edu/ml/machine-learning-databases/adult/adult.test -O data/adult/adult.test
+wget https://raw.githubusercontent.com/propublica/compas-analysis/master/compas-scores.csv -O data/compas/compas-scores.csv
 ```
-and put them under the ./data folder.
+
 #### Train on Adult dataset with Alexr2
 ```bash
 sh ./scripts/alexr2.sh

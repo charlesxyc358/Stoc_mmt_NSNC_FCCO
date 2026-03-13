@@ -1,0 +1,15 @@
+# Core numerical + DL stack
+numpy
+pandas
+torch
+torchvision
+
+# Metrics / utilities / plotting
+scikit-learn
+matplotlib
+tqdm
+
+# Project-specific training/data packages
+libauc
+wilds
+transformers

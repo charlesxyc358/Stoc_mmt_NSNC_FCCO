@@ -1,7 +1,9 @@
-./GroupDRO/data/
+GroupDRO/data/
 
-./GroupDRO/__pycache__/
+GroupDRO/__pycache__/
 
-./AUCMax/data/
+AUCMax/data/
 
-./AUCMax/__pycache__/
+AUCMax/Released_results/
+
+AUCMax/__pycache__/
